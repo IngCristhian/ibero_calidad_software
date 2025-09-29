@@ -314,12 +314,12 @@ jobs:
           # Resumen de cobertura
           if [ -f coverage.xml ]; then
             coverage=$(python -c "
-            import xml.etree.ElementTree as ET
-            tree = ET.parse('coverage.xml')
-            root = tree.getroot()
-            coverage = root.get('line-rate', '0')
-            print(f'{float(coverage)*100:.1f}')
-            ")
+import xml.etree.ElementTree as ET
+tree = ET.parse('coverage.xml')
+root = tree.getroot()
+coverage = root.get('line-rate', '0')
+print(f'{float(coverage)*100:.1f}')
+")
             echo "📈 Cobertura de pruebas: $coverage%"
             if (( $(echo "$coverage < 80" | bc -l) )); then
               echo "⚠️ Cobertura crítica para dispositivos médicos"
