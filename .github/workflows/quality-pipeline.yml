@@ -63,11 +63,10 @@ jobs:
           path: /tmp/therac25-image.tar
           retention-days: 1
 
-  # Setup de herramientas (después de construir el contenedor)
+  # Setup de herramientas (en paralelo con construcción del contenedor)
   setup-tools:
     name: 🔧 Configurar Herramientas de Calidad
     runs-on: ubuntu-latest
-    needs: [build-container]
     outputs:
       python-cache-key: ${{ steps.cache-key.outputs.key }}
 
@@ -118,11 +117,11 @@ jobs:
           pip list | grep -E "(pytest|pylint|coverage)" || echo "Herramientas Python se instalarán desde cache"
           ~/k6/k6 version || echo "k6 será agregado al PATH en siguientes jobs"
 
-  # Análisis de Seguridad con herramientas del runner
+  # Análisis de Seguridad (en paralelo con otros análisis)
   security-scan:
     name: 🔒 Análisis de Seguridad
     runs-on: ubuntu-latest
-    needs: [build-container, setup-tools]
+    needs: [build-container]
 
     steps:
       - name: 📥 Checkout código
@@ -140,7 +139,9 @@ jobs:
             ~/.cache/pip
             ~/.local/bin
             ~/k6
-          key: ${{ needs.setup-tools.outputs.python-cache-key }}
+          key: tools-${{ runner.os }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('.github/workflows/quality-pipeline.yml') }}
+          restore-keys: |
+            tools-${{ runner.os }}-
 
       - name: 📥 Descargar contenedor
         uses: actions/download-artifact@v4
@@ -194,11 +195,11 @@ jobs:
           name: reportes-seguridad
           path: reports/
 
-  # Análisis estático y pruebas combinadas
+  # Análisis estático y pruebas combinadas (en paralelo con seguridad)
   code-quality:
     name: 📊 Análisis de Código y Pruebas
     runs-on: ubuntu-latest
-    needs: [build-container, setup-tools]
+    needs: [build-container]
 
     steps:
       - name: 📥 Checkout código
@@ -218,7 +219,9 @@ jobs:
             ~/.cache/pip
             ~/.local/bin
             ~/k6
-          key: ${{ needs.setup-tools.outputs.python-cache-key }}
+          key: tools-${{ runner.os }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('.github/workflows/quality-pipeline.yml') }}
+          restore-keys: |
+            tools-${{ runner.os }}-
 
       - name: 📥 Descargar contenedor
         uses: actions/download-artifact@v4
@@ -345,7 +348,7 @@ jobs:
   load-testing:
     name: ⚡ Pruebas de Carga con k6
     runs-on: ubuntu-latest
-    needs: [build-container, setup-tools, code-quality]
+    needs: [build-container, code-quality]
     if: ${{ github.event.inputs.run_load_tests != 'false' }}
 
     steps:
@@ -364,7 +367,9 @@ jobs:
             ~/.cache/pip
             ~/.local/bin
             ~/k6
-          key: ${{ needs.setup-tools.outputs.python-cache-key }}
+          key: tools-${{ runner.os }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('.github/workflows/quality-pipeline.yml') }}
+          restore-keys: |
+            tools-${{ runner.os }}-
 
       - name: 📥 Descargar contenedor
         uses: actions/download-artifact@v4
@@ -384,10 +389,13 @@ jobs:
           docker compose logs therac_web || echo "⚠️ No hay logs disponibles"
           sleep 15
 
-      - name: ⚡ Configurar k6 desde cache
+      - name: ⚡ Instalar k6
         run: |
-          export PATH="$HOME/k6:$PATH"
-          k6 version
+          curl https://github.com/grafana/k6/releases/download/v0.46.0/k6-v0.46.0-linux-amd64.tar.gz -L | tar xvz
+          mkdir -p ~/k6
+          cp k6-v0.46.0-linux-amd64/k6 ~/k6/
+          echo "$HOME/k6" >> $GITHUB_PATH
+          ~/k6/k6 version
 
       - name: 📁 Preparar reportes
         working-directory: .
