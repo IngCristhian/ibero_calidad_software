@@ -32,10 +32,10 @@ ENV SIMULATION_SPEED=1x
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import src.simulator.control_module; print('OK')" || exit 1
+    CMD curl -f http://localhost:8080/api/status || exit 1
 
-# Expose port for web dashboard (future feature)
+# Expose port for web interface
 EXPOSE 8080
 
-# Default command - Always run buggy version to demonstrate the deadly bugs
-CMD ["python", "src/simulator/main.py", "--version=buggy", "--scenario=all"]
+# Default command - Run web interface to demonstrate bugs
+CMD ["python", "src/web_interface/app.py"]

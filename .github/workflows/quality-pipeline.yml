@@ -318,7 +318,7 @@ import xml.etree.ElementTree as ET
 tree = ET.parse('coverage.xml')
 root = tree.getroot()
 coverage = root.get('line-rate', '0')
-print(f'{float(coverage)*100:.1f}')
+print(str(float(coverage)*100)[:4])
 ")
             echo "📈 Cobertura de pruebas: $coverage%"
             if (( $(echo "$coverage < 80" | bc -l) )); then
