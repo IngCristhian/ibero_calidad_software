@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador THERAC-25 - Panel de Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid #ff6600;
+            padding: 20px;
+            background-color: #1a0000;
+        }
+
+        .header h1 {
+            color: #ff6600;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .warning {
+            color: #ffaa00;
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+
+        .educational-note {
+            color: #00aaff;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .main-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel, .status-panel {
+            border: 2px solid #00ff00;
+            padding: 20px;
+            background-color: #001100;
+        }
+
+        .panel-title {
+            color: #00ff00;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00aaff;
+        }
+
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 10px;
+            background-color: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+        }
+
+        .control-group input:focus, .control-group select:focus {
+            outline: none;
+            border-color: #ffaa00;
+            box-shadow: 0 0 5px #ffaa00;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px;
+            border: 2px solid;
+            background-color: transparent;
+            color: inherit;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-setup {
+            border-color: #00aaff;
+            color: #00aaff;
+        }
+
+        .btn-setup:hover {
+            background-color: #00aaff;
+            color: #000;
+        }
+
+        .btn-fire {
+            border-color: #ff0000;
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        .btn-fire:hover {
+            background-color: #ff0000;
+            color: #000;
+        }
+
+        .btn-mode {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+
+        .btn-mode:hover {
+            background-color: #ffaa00;
+            color: #000;
+        }
+
+        .btn-emergency {
+            border-color: #ff6600;
+            color: #ff6600;
+            grid-column: 1 / -1;
+        }
+
+        .btn-emergency:hover {
+            background-color: #ff6600;
+            color: #000;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .status-label {
+            color: #00aaff;
+        }
+
+        .status-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .logs-panel {
+            border: 2px solid #ffaa00;
+            padding: 20px;
+            background-color: #110a00;
+            height: 300px;
+        }
+
+        .logs-content {
+            height: 100%;
+            overflow-y: auto;
+            background-color: #000;
+            padding: 10px;
+            border: 1px solid #ffaa00;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-timestamp {
+            color: #666;
+        }
+
+        .log-info {
+            color: #00aaff;
+        }
+
+        .log-warning {
+            color: #ffaa00;
+        }
+
+        .log-error {
+            color: #ff0000;
+        }
+
+        .log-critical {
+            color: #ff0000;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+
+        .edit-panel {
+            border: 2px solid #ff6600;
+            padding: 20px;
+            background-color: #110800;
+            margin-top: 20px;
+        }
+
+        .edit-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 100px;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .danger-indicator {
+            color: #ff0000;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #ff0000;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            background-color: #110000;
+            margin: 15% auto;
+            padding: 20px;
+            border: 3px solid #ff0000;
+            width: 50%;
+            text-align: center;
+            color: #ff0000;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado con advertencias -->
+        <div class="header">
+            <h1>SIMULADOR THERAC-25</h1>
+            <div class="warning">⚠️ ADVERTENCIA: Esta versión reproduce los errores mortales del equipo original</div>
+            <div class="educational-note">📚 Propósito educativo: Demostrar la importancia de la calidad del software en sistemas críticos</div>
+        </div>
+
+        <!-- Indicador de peligro -->
+        <div class="danger-indicator" id="dangerIndicator" style="display: none;">
+            🚨 PELIGRO CRÍTICO DETECTADO 🚨
+        </div>
+
+        <!-- Panel principal -->
+        <div class="main-panel">
+            <!-- Panel de control -->
+            <div class="control-panel">
+                <div class="panel-title">Panel de Control</div>
+
+                <div class="control-group">
+                    <label for="dosis">Dosis de Radiación (cGy):</label>
+                    <input type="number" id="dosis" value="200" min="0" max="2000">
+                </div>
+
+                <div class="control-group">
+                    <label for="posicionX">Posición X (mm):</label>
+                    <input type="number" id="posicionX" value="10" min="-100" max="100">
+                </div>
+
+                <div class="control-group">
+                    <label for="posicionY">Posición Y (mm):</label>
+                    <input type="number" id="posicionY" value="15" min="-100" max="100">
+                </div>
+
+                <div class="control-group">
+                    <label for="modoHaz">Modo del Haz:</label>
+                    <select id="modoHaz">
+                        <option value="xray">Rayos X</option>
+                        <option value="electron">Electrones</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-setup" onclick="configurarTratamiento()">
+                        Configurar Tratamiento
+                    </button>
+                    <button class="btn btn-mode" onclick="cambiarModo()">
+                        Cambiar Modo
+                    </button>
+                    <button class="btn btn-fire" onclick="dispararHaz()">
+                        🔥 DISPARAR HAZ
+                    </button>
+                    <button class="btn btn-emergency" onclick="paradaEmergencia()">
+                        🚨 PARADA DE EMERGENCIA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel de estado -->
+            <div class="status-panel">
+                <div class="panel-title">Estado de la Máquina</div>
+
+                <div class="status-item">
+                    <span class="status-label">Estado:</span>
+                    <span class="status-value" id="estado">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Modo del Haz:</span>
+                    <span class="status-value" id="modoActual">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Dosis Configurada:</span>
+                    <span class="status-value" id="dosisActual">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Posición X:</span>
+                    <span class="status-value" id="posXActual">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Posición Y:</span>
+                    <span class="status-value" id="posYActual">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Contador Configuración:</span>
+                    <span class="status-value" id="contadorConfig">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Posición Mesa:</span>
+                    <span class="status-value" id="posicionMesa">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Mesa en Movimiento:</span>
+                    <span class="status-value" id="mesaMoviendo">Cargando...</span>
+                </div>
+
+                <div class="status-item">
+                    <span class="status-label">Versión:</span>
+                    <span class="status-value" id="version">BUGGY</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de edición rápida (reproduce race conditions) -->
+        <div class="edit-panel">
+            <div class="panel-title">Edición Rápida (⚠️ PELIGROSO - Reproduce Race Conditions)</div>
+
+            <div class="edit-controls">
+                <div class="control-group">
+                    <label for="campoEditar">Campo a Editar:</label>
+                    <select id="campoEditar">
+                        <option value="dosis">Dosis</option>
+                        <option value="posicion_x">Posición X</option>
+                        <option value="posicion_y">Posición Y</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="valorEditar">Nuevo Valor:</label>
+                    <input type="number" id="valorEditar" value="100">
+                </div>
+
+                <button class="btn btn-mode" onclick="editarCampo()">
+                    Editar
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de logs -->
+        <div class="logs-panel">
+            <div class="panel-title">Registro de Eventos del Sistema</div>
+            <div class="logs-content" id="logsContent">
+                <div class="log-entry log-info">
+                    <span class="log-timestamp">[Sistema]</span>
+                    Simulador iniciado en modo BUGGY - Todos los errores históricos activos
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de error crítico -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="cerrarModal()">&times;</span>
+            <h2>🚨 ERROR CRÍTICO DETECTADO</h2>
+            <p id="errorMessage"></p>
+            <p><strong>Este es un error que causó muertes en el Therac-25 real.</strong></p>
+            <button class="btn btn-emergency" onclick="cerrarModal()">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let statusInterval;
+        let logCounter = 0;
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarSimulador();
+        });
+
+        function inicializarSimulador() {
+            agregarLog('Sistema iniciado - Conectando con simulador Therac-25...', 'info');
+            actualizarEstado();
+
+            // Actualizar estado cada 2 segundos
+            statusInterval = setInterval(actualizarEstado, 2000);
+
+            agregarLog('⚠️ ADVERTENCIA: Modo BUGGY activo - Errores históricos reproducibles', 'warning');
+        }
+
+        async function actualizarEstado() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.error) {
+                    agregarLog(`Error al obtener estado: ${data.error}`, 'error');
+                    return;
+                }
+
+                // Actualizar elementos del DOM
+                document.getElementById('estado').textContent = data.estado.toUpperCase();
+                document.getElementById('modoActual').textContent = data.modo_haz.toUpperCase();
+                document.getElementById('dosisActual').textContent = `${data.dosis} cGy`;
+                document.getElementById('posXActual').textContent = `${data.posicion_x} mm`;
+                document.getElementById('posYActual').textContent = `${data.posicion_y} mm`;
+                document.getElementById('contadorConfig').textContent = data.contador_configuracion;
+                document.getElementById('posicionMesa').textContent = data.posicion_mesa.toUpperCase();
+                document.getElementById('mesaMoviendo').textContent = data.mesa_moviendo ? 'SÍ' : 'NO';
+
+                // Detectar situaciones peligrosas
+                if (data.contador_configuracion >= 250) {
+                    mostrarPeligro('⚠️ CONTADOR CERCA DEL OVERFLOW (256) - RIESGO DE BUG MORTAL');
+                    agregarLog('🚨 PELIGRO: Contador acercándose al overflow de 8 bits', 'critical');
+                }
+
+                if (data.mesa_moviendo && data.estado !== 'startup') {
+                    mostrarPeligro('⚠️ MESA EN MOVIMIENTO DURANTE OPERACIÓN - RIESGO DE DESINCRONIZACIÓN');
+                }
+
+            } catch (error) {
+                agregarLog(`Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function configurarTratamiento() {
+            const dosis = parseInt(document.getElementById('dosis').value);
+            const posX = parseInt(document.getElementById('posicionX').value);
+            const posY = parseInt(document.getElementById('posicionY').value);
+
+            try {
+                const response = await fetch('/api/setup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dosis: dosis,
+                        posicion_x: posX,
+                        posicion_y: posY
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.exito) {
+                    agregarLog(`✅ ${data.mensaje}`, 'info');
+                } else {
+                    agregarLog(`❌ ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                agregarLog(`Error en configuración: ${error.message}`, 'error');
+            }
+        }
+
+        async function cambiarModo() {
+            const modo = document.getElementById('modoHaz').value;
+
+            try {
+                const response = await fetch('/api/mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        modo: modo
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.exito) {
+                    agregarLog(`🔄 ${data.mensaje}`, 'info');
+
+                    if (data.advertencia) {
+                        agregarLog(`⚠️ ${data.advertencia}`, 'warning');
+                        mostrarPeligro(data.advertencia);
+                    }
+                } else {
+                    agregarLog(`❌ ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                agregarLog(`Error al cambiar modo: ${error.message}`, 'error');
+            }
+        }
+
+        async function dispararHaz() {
+            // Confirmación adicional para disparo
+            if (!confirm('⚠️ ¿Está seguro de disparar el haz? Esta acción puede reproducir errores mortales del Therac-25.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/fire', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.exito) {
+                    agregarLog(`🔥 ${data.mensaje}`, 'info');
+                    agregarLog(`   Dosis aplicada: ${data.dosis_aplicada} cGy`, 'info');
+                    agregarLog(`   Modo: ${data.modo}`, 'info');
+                    agregarLog(`   Posición: ${data.posicion}`, 'info');
+                } else {
+                    agregarLog(`🚨 ${data.error}`, 'critical');
+
+                    if (data.nivel_peligro === 'MORTAL') {
+                        mostrarErrorCritico(data.error, data.bug_historico);
+                        if (data.dosis_real_aplicada) {
+                            agregarLog(`💀 SOBREDOSIS SIMULADA: ${data.dosis_real_aplicada} cGy aplicados`, 'critical');
+                        }
+                    }
+                }
+
+            } catch (error) {
+                agregarLog(`Error crítico durante disparo: ${error.message}`, 'critical');
+            }
+        }
+
+        async function editarCampo() {
+            const campo = document.getElementById('campoEditar').value;
+            const valor = document.getElementById('valorEditar').value;
+
+            agregarLog(`⚡ Editando ${campo} a ${valor} durante operación...`, 'warning');
+
+            try {
+                const response = await fetch('/api/edit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        campo: campo,
+                        valor: valor
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.exito) {
+                    agregarLog(`✏️ ${data.mensaje}`, 'info');
+
+                    if (data.advertencia) {
+                        agregarLog(`⚠️ ${data.advertencia}`, 'warning');
+                    }
+                } else {
+                    agregarLog(`🚨 ${data.error}`, 'critical');
+
+                    if (data.nivel_peligro === 'MORTAL') {
+                        mostrarErrorCritico(data.error, data.bug_historico);
+                    }
+                }
+
+            } catch (error) {
+                agregarLog(`Error durante edición: ${error.message}`, 'error');
+            }
+        }
+
+        async function paradaEmergencia() {
+            try {
+                const response = await fetch('/api/emergency_stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.exito) {
+                    agregarLog(`🛑 ${data.mensaje}`, 'critical');
+                    ocultarPeligro();
+                } else {
+                    agregarLog(`❌ Error en parada de emergencia: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                agregarLog(`Error en parada de emergencia: ${error.message}`, 'error');
+            }
+        }
+
+        function agregarLog(mensaje, tipo = 'info') {
+            const logsContent = document.getElementById('logsContent');
+            const timestamp = new Date().toLocaleTimeString();
+
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${tipo}`;
+            logEntry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span> ${mensaje}`;
+
+            logsContent.appendChild(logEntry);
+            logsContent.scrollTop = logsContent.scrollHeight;
+
+            // Limitar número de logs
+            if (logsContent.children.length > 50) {
+                logsContent.removeChild(logsContent.firstChild);
+            }
+        }
+
+        function mostrarPeligro(mensaje) {
+            const indicator = document.getElementById('dangerIndicator');
+            indicator.textContent = `🚨 ${mensaje} 🚨`;
+            indicator.style.display = 'block';
+        }
+
+        function ocultarPeligro() {
+            const indicator = document.getElementById('dangerIndicator');
+            indicator.style.display = 'none';
+        }
+
+        function mostrarErrorCritico(error, bugHistorico) {
+            const modal = document.getElementById('errorModal');
+            const errorMessage = document.getElementById('errorMessage');
+
+            errorMessage.innerHTML = `
+                <strong>Error:</strong> ${error}<br><br>
+                <strong>Contexto Histórico:</strong> ${bugHistorico || 'Este tipo de error causó accidentes mortales en el Therac-25 real.'}
+            `;
+
+            modal.style.display = 'block';
+        }
+
+        function cerrarModal() {
+            const modal = document.getElementById('errorModal');
+            modal.style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('errorModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Limpiar interval al cerrar la página
+        window.addEventListener('beforeunload', function() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+        });
+    </script>
+</body>
+</html>

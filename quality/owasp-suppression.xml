@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+    OWASP Dependency Check Suppressions for Therac-25 Simulation
+    This file suppresses known false positives while maintaining security vigilance
+    -->
+
+    <!-- Suppress false positives for testing frameworks -->
+    <suppress>
+        <notes><![CDATA[
+        pytest is only used for testing, not in production simulation
+        ]]></notes>
+        <packageUrl regex="true">^pkg:pypi/pytest@.*$</packageUrl>
+        <cve>CVE-2023-25803</cve>
+    </suppress>
+
+    <!-- Flask development server warnings -->
+    <suppress>
+        <notes><![CDATA[
+        Flask development server is only used for demonstration purposes
+        Not deployed in production medical environments
+        ]]></notes>
+        <packageUrl regex="true">^pkg:pypi/flask@.*$</packageUrl>
+        <vulnerabilityName>Flask Development Server</vulnerabilityName>
+    </suppress>
+
+    <!-- Educational simulation - not production medical device -->
+    <suppress>
+        <notes><![CDATA[
+        This is an educational simulation of historical bugs
+        Not intended for actual medical use
+        Security warnings are educational in nature
+        ]]></notes>
+        <filePath regex="true">.*src/simulator/.*\.py$</filePath>
+        <cve>CVE-2024-EDUCATIONAL</cve>
+    </suppress>
+
+</suppressions>
